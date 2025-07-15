@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yape Cobranza - Pago Procesado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            border-top: 5px solid #673AB7; /* Color de Yape similar */
+        }
+
+        .payment-methods-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .payment-methods-bar img {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+            background-color: white;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .payment-methods-bar img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .payment-methods-bar img:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            margin-bottom: 40px;
+            padding: 30px;
+            text-align: center;
+        }
+        .header img {
+            width: 350px; /* Logo de Yape grande (tipo banner) */
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.8em;
+            color: #673AB7;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.1em;
+            color: #555;
+        }
+        /* Eliminar estilos de form-group e input ya que no habrá formulario */
+        /* .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+        }
+        .form-group input {
+            width: calc(100% - 20px);
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        } */
+        button { /* Este estilo se mantendrá para el botón si se decidiera mostrarlo, pero en este caso, se oculta por JS */
+            background-color: #673AB7; /* Color de Yape */
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #5a2e9b;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #status-message {
+            margin-top: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .error {
+            color: #F44336; /* Rojo para error */
+        }
+        #results {
+            margin-top: 30px;
+            text-align: left;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            display: none; /* Oculto inicialmente, se muestra con JS si hay éxito */
+        }
+        #results h3 {
+            color: #673AB7;
+            margin-bottom: 15px;
+        }
+        #results p {
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        #results strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-methods-bar">
+            <img src="bcp.png" alt="Logo BCP">
+            <img src="plin.png" alt="Logo Plin">
+            <img src="interbank.png" alt="Logo Interbank">
+        </div>
+        <div class="header">
+            <img src="yape.png" alt="Logo de Yape Personalizado">
+            <h1>Recibir Yapeo - Solicitud de Pago</h1>
+            <p>Confirmación de Pago.</p>
+        </div>
+
+        <div id="status-message">
+            <img id="loading-gif" src="loading.gif" alt="Cargando..." style="display: none; height: 50px; margin: 10px auto;">
+        </div>
+
+        <div id="results">
+            <h3>Datos de la Solicitud Recibida:</h3>
+            <p>Nombre: <strong id="result-beneficiary-name"></strong></p>
+            <p>Monto: <strong id="result-amount"></strong></p>
+            <p>Número Yape: <strong id="result-yape-number"></strong></p>
+            <p>Concepto: <strong id="result-concept"></strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Los elementos del formulario ya no existen, por lo que estas referencias son redundantes
+        // const requestButton = document.getElementById('request-button'); // Esta referencia ya no es necesaria
+        const statusMessageDiv = document.getElementById('status-message');
+        const loadingGif = document.getElementById('loading-gif');
+        const resultsDiv = document.getElementById('results');
+        const resultAmount = document.getElementById('result-amount');
+        const resultYapeNumber = document.getElementById('result-yape-number');
+        const resultConcept = document.getElementById('result-concept');
+        const resultBeneficiaryName = document.getElementById('result-beneficiary-name');
+
+        // Función para obtener parámetros de la URL
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        // Lógica que se ejecuta al cargar la página success.html
+        window.onload = function() {
+            const status = getUrlParameter('status');
+            const name = getUrlParameter('name');
+            const amount = getUrlParameter('amount');
+            const yapeNum = getUrlParameter('yapeNum');
+            const concept = getUrlParameter('concept');
+
+            if (status === 'success') {
+                // Configurar mensaje de éxito
+                statusMessageDiv.textContent = '¡Su pago ha sido procesado!';
+                statusMessageDiv.style.color = '#4CAF50'; // Verde para éxito
+
+                // Ocultar elementos no deseados en la página de éxito
+                loadingGif.style.display = 'none'; // Asegurarse de que el GIF esté oculto
+                // requestButton.style.display = 'none'; // Ya no hay botón en el HTML, esta línea es redundante
+
+                // Mostrar los datos en la sección de resultados
+                resultsDiv.style.display = 'block';
+                resultBeneficiaryName.textContent = name || 'No especificado';
+                resultAmount.textContent = `S/ ${parseFloat(amount || 0).toFixed(2)}`;
+                resultYapeNumber.textContent = yapeNum || 'No especificado';
+                resultConcept.textContent = concept || 'No especificado';
+
+                // Ya no hay inputs para deshabilitar, estas líneas son redundantes
+                /*
+                document.getElementById('amount').disabled = true;
+                document.getElementById('beneficiaryName').disabled = true;
+                document.getElementById('yapeNumber').disabled = true;
+                document.getElementById('concept').disabled = true;
+                */
+
+            } else {
+                // Si la página se carga sin el parámetro 'status=success', inicializarla vacía
+                loadingGif.style.display = 'none';
+                // requestButton.style.display = 'block'; // Ya no hay botón
+                resultsDiv.style.display = 'none';
+                statusMessageDiv.textContent = ''; // Limpiar cualquier mensaje de estado inicial
+            }
+        };
+
+        // El evento click del botón ya no es necesario ni relevante aquí.
+        /*
+        requestButton.addEventListener('click', function() {
+            console.log("El botón de solicitud fue clicado en la página de éxito, lo cual no debería suceder.");
+        });
+        */
+    </script>
+</body>
+</html>
